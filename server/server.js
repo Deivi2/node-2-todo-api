@@ -1,10 +1,9 @@
-
 //When we will test this code will make sure that development database wont be touch but just testDatabase
 
 
 require('./config/config');
 
-const _ =require('lodash');
+const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
@@ -12,6 +11,7 @@ const {ObjectID} = require('mongodb');
 const {mongoose} = require('./db/mongoose.js')
 const {Todo} = require('./models/todo.js');
 const {User} = require('./models/user.js');
+var {authenticate} = require('./middleware/authenticate.js');
 
 
 const app = express();
@@ -76,10 +76,10 @@ app.delete('/todos/:id', (req, res) => {
         res.send({todo});
     }).catch((e) => res.status(404).send())
 
- });
+});
 
 
-app.patch('/todos/:id', (req,res) => {
+app.patch('/todos/:id', (req, res) => {
     var id = req.params.id;
     var body = _.pick(req.body, ['text', 'completed']);
 
@@ -87,15 +87,15 @@ app.patch('/todos/:id', (req,res) => {
         return res.status(404).send();
     }
     //if its boolean and its true
-    if(_.isBoolean(body.completed) && body.completed){
+    if (_.isBoolean(body.completed) && body.completed) {
         body.completedAt = new Date().getTime();
-    }else{
+    } else {
         body.completed = false;
         body.completedAt = null;
     }
 
     Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
-        if(!todo){
+        if (!todo) {
             return res.status(404).send();
         }
 
@@ -111,22 +111,26 @@ app.patch('/todos/:id', (req,res) => {
 
 /////////Users page
 
-app.post('/users', (req,res) => {
+app.post('/users', (req, res) => {
 
-    var body =_.pick(req.body, ['email', 'password']);
-
+    var body = _.pick(req.body, ['email', 'password']);
     var user = new User(body);
 
-
-
-    user.save().then((user)=> {
+    user.save().then((user) => {
         return user.generateAuthToken();
     }).then((token) => {
         res.header('x-auth', token).send(user);
-    }).catch((e) => {res.status(404).send(e)});
+    }).catch((e) => {
+        res.status(404).send(e)
+    });
 
 });
 
+
+
+app.get('/users/me', authenticate, (req, res) => {
+    res.send(req.user);
+});
 
 
 app.listen(port, () => {
