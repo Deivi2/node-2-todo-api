@@ -85,7 +85,7 @@ userSchema.statics.findByToken = function (token) {
 
 };
 
-
+//hashing password
 userSchema.pre('save', function (next) {
     var user = this;
 
