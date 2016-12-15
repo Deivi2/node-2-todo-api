@@ -127,7 +127,6 @@ app.post('/users', (req, res) => {
 });
 
 
-
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);
 });
@@ -136,30 +135,18 @@ app.get('/users/me', authenticate, (req, res) => {
 //POST /users/login {email, password}
 
 
-app.post('/users/login', (req,res) => {
-   var body = _.pick(req.body, ['email', 'password']);
+app.post('/users/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
 
-   User.findByCredentials(body.email, body.password).then((user) => {
+    User.findByCredentials(body.email, body.password).then((user) => {
+        return user.generateAuthToken().then((token) => {
+            res.header('x-auth', token).send(user);
+        });
+    }).catch((e) => {
+        res.status(404).send();
 
-       return user.generateAuthToken().then((token) => {
-           res.header('x-auth', token).send(user);
-       });
-
-
-
-   }).catch((e) => {
-       res.status(404).send();
-
-   });
-
-
-
-
-
+    });
 });
-
-
-
 
 
 app.listen(port, () => {
